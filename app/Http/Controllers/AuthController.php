@@ -11,7 +11,7 @@ class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register']]);
+        $this->middleware('auth:api', ['except' => ['login', 'registerUser']]);
     }
 
     public function registerUser(Request $request)
@@ -49,7 +49,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:40',
             'lastname' => 'required|string|max:60',
-            'age' => 'required|string|between:18,40',
+            'age' => 'required|integer|between:18,40',
             'email' => 'required|string|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8' // La contraseña es opcional en la actualización
         ]);

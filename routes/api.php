@@ -39,7 +39,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('logout', 'logout');
     Route::post('profile', 'userProfileInfo');
     Route::post('refresh', 'refresh');
-    Route::post('updateinfo', 'updateUser');
+    Route::put('updateinfo', 'updateUser');
 });
 
 Route::controller(TaskController::class)->group(function () {
