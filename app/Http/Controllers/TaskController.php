@@ -162,4 +162,25 @@ class TaskController extends Controller
 
         return response()->json(['message' => 'Task deleted successfully...'], 200);
     }
+
+
+    public function getStatusTaskById($idT)
+    {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'No access'], 401);
+        }
+
+        $user = Auth::user();
+
+        $task = Task::find($idT);
+
+        if (!$task) {
+            return response()->json(['error' => 'Task not found in DB'], 404);
+        }
+
+        if ($task->user_id !== $user->id) {
+            return response()->json(['error' => 'Task does not belong to this user'], 403);
+        }
+        return response()->json(['task' => $task->completed], 200);
+    }
 }

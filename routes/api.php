@@ -49,4 +49,5 @@ Route::controller(TaskController::class)->group(function () {
     Route::put('edittask/{id}', 'editTaskById');
     Route::put('taskdone/{id}', 'TaskDoneById');
     Route::delete('tasks/{id}', 'deleteTaskById');
+    Route::get('taskstatus/{id}', 'getStatusTaskById');
 });
