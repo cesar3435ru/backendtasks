@@ -163,7 +163,6 @@ class TaskController extends Controller
         return response()->json(['message' => 'Task deleted successfully...'], 200);
     }
 
-
     public function getStatusTaskById($idT)
     {
         if (!Auth::check()) {
