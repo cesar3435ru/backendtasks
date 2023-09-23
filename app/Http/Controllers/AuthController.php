@@ -6,12 +6,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
+use Tymon\JWTAuth\Facades\JWTAuth;
+
 
 class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'registerUser']]);
+        $this->middleware('auth:api', ['except' => ['login', 'registerUser', 'checkEmail', 'resetPassword', 'checkToken']]);
     }
 
     public function registerUser(Request $request)
@@ -51,7 +57,7 @@ class AuthController extends Controller
             'lastname' => 'required|string|max:60',
             'age' => 'required|integer|between:18,40',
             'email' => 'required|string|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8' // La contraseña es opcional en la actualización
+            'password' => 'nullable|string|min:8' // The password is optional
         ]);
 
         if ($validator->fails()) {
@@ -107,5 +113,127 @@ class AuthController extends Controller
             'user' => $user,
             'expires_in' => auth()->factory()->getTTL() * 60
         ]);
+    }
+
+
+    public function checkEmail(Request $request)
+    {
+        // Validate the email input
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        // Return info when there is an error
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 400);
+        }
+
+        $email = $request->input('email');
+
+        $existingToken = DB::table('password_reset_tokens')->where('email', $email)->first();
+
+        if ($existingToken) {
+            return response()->json(['error' => 'Token already generated'], 400);
+        }
+
+        // Verify if email exists
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Email not found'], 401);
+        }
+
+        try {
+            // Generate a JWT token for user
+            $token = JWTAuth::fromUser($user);
+
+            // Save data in 'password_reset_tokens'
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $email],
+                ['token' => $token, 'created_at' => now()]
+            );
+            return response()->json(['message' => 'JWT has been generated', 'token' => $token], 200);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Error to generate JWT'], 500);
+        }
+    }
+
+
+
+    public function resetPassword(Request $request)
+    {
+        // Validate the password input
+        $validator = Validator::make($request->all(), [
+            'new_password' => 'required|string|min:10',
+        ]);
+
+        // Return info when there is an error
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 400);
+        }
+
+        $newPassword = $request->input('new_password'); // Obtén la nueva contraseña desde la solicitud
+
+        //I get the token as a HTTP Headers
+        $token = $request->bearerToken();
+
+        if (!$token) {
+            return response()->json(['error' => 'Token not provided'], 401);
+        }
+
+        //Verify if token is valid.
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+
+            //Verify if both tokens are equal
+            $storedToken = DB::table('password_reset_tokens')->where('email', $user->email)->value('token');
+
+            if ($storedToken !== $token) {
+                return response()->json(['error' => 'Invalid token'], 401);
+            }
+
+            // Update the new password
+            $user->update(['password' => bcrypt($newPassword)]);
+
+            auth()->logout();
+
+            // Elimina el token de la tabla 'password_reset_tokens' una vez que se utiliza
+            DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+
+            return response()->json(['message' => 'Password has been reset successfully'], 200);
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => 'Expired token'], 401);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => 'Invalid token'], 401);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error to reset password'], 500);
+        }
+    }
+
+
+
+
+    public function checkToken(Request $request)
+    {
+        //I get the token as a HTTP Headers
+        $token = $request->bearerToken();
+
+        // $tokenData = DB::table('password_reset_tokens')->where('token', $token)->first();
+
+        // if (!$tokenData) {
+        //     return response()->json(['error' => 'Token no encontrado'], 401);
+        // }
+
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+
+            return response()->json(['message' => 'Valid token', 'user' => $user], 200);
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => 'Expired token'], 401);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => 'Invalid token'], 401);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error to verify token'], 500);
+        }
     }
 }

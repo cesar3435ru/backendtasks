@@ -40,6 +40,9 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('profile', 'userProfileInfo');
     Route::post('refresh', 'refresh');
     Route::put('updateinfo', 'updateUser');
+    Route::post('verifyemail', 'checkEmail');
+    Route::post('resetpassword', 'resetPassword');
+    Route::post('checktoken', 'checkToken');
 });
 
 Route::controller(TaskController::class)->group(function () {
