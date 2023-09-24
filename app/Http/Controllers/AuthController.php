@@ -172,7 +172,7 @@ class AuthController extends Controller
             return response()->json(['error' => $validator->errors()->first()], 400);
         }
 
-        $newPassword = $request->input('new_password'); // Obtén la nueva contraseña desde la solicitud
+        $newPassword = $request->input('new_password'); // I get the new password input
 
         //I get the token as a HTTP Headers
         $token = $request->bearerToken();
@@ -197,7 +197,7 @@ class AuthController extends Controller
 
             auth()->logout();
 
-            // Elimina el token de la tabla 'password_reset_tokens' una vez que se utiliza
+            //Delete token in the table when action is executed
             DB::table('password_reset_tokens')->where('email', $user->email)->delete();
 
             return response()->json(['message' => 'Password has been reset successfully'], 200);
@@ -218,11 +218,11 @@ class AuthController extends Controller
         //I get the token as a HTTP Headers
         $token = $request->bearerToken();
 
-        // $tokenData = DB::table('password_reset_tokens')->where('token', $token)->first();
+        $tokenData = DB::table('password_reset_tokens')->where('token', $token)->first();
 
-        // if (!$tokenData) {
-        //     return response()->json(['error' => 'Token no encontrado'], 401);
-        // }
+        if (!$tokenData) {
+            return response()->json(['error' => 'Token no encontrado'], 401);
+        }
 
         try {
             $user = JWTAuth::parseToken()->authenticate();
