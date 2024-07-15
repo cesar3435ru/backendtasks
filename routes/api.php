@@ -36,6 +36,7 @@ use App\Http\Controllers\TaskController;
 Route::controller(AuthController::class)->group(function () {
     Route::post('register', 'registerUser');
     Route::post('login', 'login');
+    Route::get('users', 'getUsers');
     Route::post('logout', 'logout');
     Route::post('profile', 'userProfileInfo');
     Route::post('refresh', 'refresh');

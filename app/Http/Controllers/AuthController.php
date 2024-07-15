@@ -17,7 +17,7 @@ class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'registerUser', 'checkEmail', 'resetPassword', 'checkToken']]);
+        $this->middleware('auth:api', ['except' => ['login', 'registerUser', 'checkEmail', 'resetPassword', 'checkToken','users']]);
     }
 
     public function registerUser(Request $request)
@@ -235,5 +235,9 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error to verify token'], 500);
         }
+    }
+
+    public function getUsers(){
+        return User::all();
     }
 }
